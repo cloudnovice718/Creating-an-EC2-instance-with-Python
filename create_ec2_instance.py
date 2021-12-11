@@ -14,7 +14,7 @@ sec_group_name = 'my_python_sec_group'
 vpc_cidr = '192.168.0.0/16'
 subnet_cidr = '192.168.1.0/24'
 ec2_min = 1
-ec2_max = 2
+ec2_max = 1
 
 
 # Create VPC
