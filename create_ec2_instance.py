@@ -32,7 +32,7 @@ def create_new_vpc():
 	Filters = [{'Name': 'vpc-id', 'Values': [vpc_id]}]
 
 	)
-	route_table_id = route_table_info['RouteTables']['RouteTableId']
+	route_table_id = route_table_info['RouteTables'][0]['RouteTableId']
 
 	ec2_client.create_route(
 
