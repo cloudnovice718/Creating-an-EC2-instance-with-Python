@@ -6,3 +6,5 @@ Before running the script, you will need to create your own access and secret ke
 https://docs.aws.amazon.com/cli/latest/reference/configure/
 
 https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html#email-and-password-for-your-account
+
+Tested with pyflakes and pylint
