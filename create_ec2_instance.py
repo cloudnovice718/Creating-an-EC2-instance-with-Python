@@ -10,7 +10,7 @@ ip_proto = 'tcp'
 ssh_port = 22
 http_port = 80
 https_port = 443
-sec_group_name = 'my_python_sec_group1'
+sec_group_name = 'my_python_sec_group'
 vpc_cidr = '192.168.0.016'
 subnet_cidr = '192.168.1.0/24'
 
