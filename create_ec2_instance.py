@@ -33,7 +33,7 @@ def create_new_vpc():
 	# Create the subnet
 	subnet = ec2_client.create_subnet(CidrBlock = subnet_cidr, VpcId = vpc_id)
 	subnet_id = subnet['Subnet']['SubnetId']
-	print(f"Subnet id :{subnet_id} has been created")
+	print(f"Subnet id: {subnet_id} has been created")
 
 	# Create a route on the VPC to the internet
 	route_table_info = ec2_client.describe_route_tables(
