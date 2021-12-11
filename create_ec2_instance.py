@@ -13,6 +13,8 @@ https_port = 443
 sec_group_name = 'my_python_sec_group'
 vpc_cidr = '192.168.0.0/16'
 subnet_cidr = '192.168.1.0/24'
+ec2_min = 1
+ec2_max = 2
 
 
 # Create VPC
@@ -132,8 +134,8 @@ def create_ec2_instance():
 	ImageId = 'ami-0ed9277fb7eb570c9',
 	InstanceType = 't2.micro',
 	KeyName = 'ec2-keypair',
-	MinCount = 1,
-	MaxCount = 1,
+	MinCount = ec2_min,
+	MaxCount = ec2_max,
 	NetworkInterfaces = [{
 
 		'AssociatePublicIpAddress': True,
