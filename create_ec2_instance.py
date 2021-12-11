@@ -6,11 +6,18 @@ import boto3
 # Setting global variables
 ec2_client = boto3.client('ec2')
 ec2_resource = boto3.resource('ec2')
+ip_proto = 'tcp'
+ssh_port = 22
+http_port = 80
+https_port = 443
+sec_group_name = 'my_python_sec_group1'
+vpc_cidr = '192.168.0.016'
+subnet_cidr = '192.168.1.0/24'
 
 
 # Create VPC
 def create_new_vpc():
-	vpc = ec2_client.create_vpc(CidrBlock = '192.168.0.0/16')
+	vpc = ec2_client.create_vpc(CidrBlock = vpc_cidr)
 	vpc_id = vpc['Vpc']['VpcId']
 	ec2_client.modify_vpc_attribute(VpcId = vpc_id, EnableDnsSupport = {'Value': True})
 	ec2_client.modify_vpc_attribute(VpcId = vpc_id, EnableDnsHostnames = {'Value': True})
@@ -19,12 +26,12 @@ def create_new_vpc():
 	igw = ec2_client.create_internet_gateway()
 	igw_id = igw['InternetGateway']['InternetGatewayId']
 	ec2_client.attach_internet_gateway(InternetGatewayId = igw_id, VpcId = vpc_id)
-	print(f"{vpc_id}\n{igw_id}\ncreated successfully")
+	print(f"VPC: {vpc_id} and Internet Gateway: {igw_id} created successfully")
 
 	# Create the subnet
-	subnet = ec2_client.create_subnet(CidrBlock = '192.168.1.0/24', VpcId = vpc_id)
+	subnet = ec2_client.create_subnet(CidrBlock = subnet_cidr, VpcId = vpc_id)
 	subnet_id = subnet['Subnet']['SubnetId']
-	print(f"{subnet_id}\nhas been created")
+	print(f"Subnet id :{subnet_id} has been created")
 
 	# Create a route on the VPC to the internet
 	route_table_info = ec2_client.describe_route_tables(
@@ -46,7 +53,7 @@ def create_new_vpc():
 def create_sec_group():
 	vpc_info = ec2_client.describe_vpcs(
 
-	Filters = [{'Name': 'cidr', 'Values': ['192.168.0.0/16']}]
+	Filters = [{'Name': 'cidr', 'Values': [vpc_cidr]}]
 
 	)
 	vpc_id = vpc_info['Vpcs'][0]['VpcId']
@@ -54,7 +61,7 @@ def create_sec_group():
 	sec_group = ec2_client.create_security_group(
 
 	Description = 'Security group created using python script',
-	GroupName = 'my_python_sec_group',
+	GroupName = sec_group_name,
 	VpcId = vpc_id
 
 	)
@@ -67,23 +74,23 @@ def create_sec_group():
 	IpPermissions = [
 
 		{
-		'FromPort': 22,
-		'ToPort': 22,
-		'IpProtocol': 'tcp',
+		'FromPort': ssh_port,
+		'ToPort': ssh_port,
+		'IpProtocol': ip_proto,
 		'IpRanges': [{'CidrIp': '0.0.0.0/0', 'Description': 'Allow SSH'}]
 		},
 
 		{
-		'FromPort': 80,
-		'ToPort': 80,
-		'IpProtocol': 'tcp',
+		'FromPort': http_port,
+		'ToPort': http_port,
+		'IpProtocol': ip_proto,
 		'IpRanges': [{'CidrIp': '0.0.0.0/0', 'Description': 'Allow HTTP'}]
 		},
 
 		{
-		'FromPort': 443,
-		'ToPort': 443,
-		'IpProtocol': 'tcp',
+		'FromPort': https_port,
+		'ToPort': https_port,
+		'IpProtocol': ip_proto,
 		'IpRanges': [{'CidrIp': '0.0.0.0/0', 'Description': 'Allow HTTPS'}]
 		}
 	])		
@@ -93,13 +100,13 @@ def create_ec2_instance():
 	key_info = ec2_client.describe_key_pairs()
 	sec_group_info = ec2_client.describe_security_groups(
 
-	Filters = [{'Name': 'group-name', 'Values': ['my_python_sec_group']}]
+	Filters = [{'Name': 'group-name', 'Values': [sec_group_name]}]
 
 	)
 	sec_group_id = sec_group_info['SecurityGroups'][0]['GroupId']	
 	subnet_info = ec2_client.describe_subnets(
 
-	Filters = [{'Name': 'cidr-block', 'Values': ['192.168.1.0/24']}]
+	Filters = [{'Name': 'cidr-block', 'Values': [subnet_cidr]}]
 
 	)
 	subnet_id = subnet_info['Subnets'][0]['SubnetId']
@@ -143,7 +150,3 @@ def create_ec2_instance():
 create_new_vpc()
 create_sec_group()
 create_ec2_instance()
-
-
-
-
