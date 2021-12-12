@@ -16,6 +16,7 @@ subnet_cidr = '192.168.1.0/24'
 ec2_min = 1
 ec2_max = 1
 ami_id = 'ami-0ed9277fb7eb570c9'
+inst_type = 't2.micro'
 
 # Create VPC
 def create_new_vpc():
@@ -132,7 +133,7 @@ def create_ec2_instance():
 	ec2_resource.create_instances(
 
 	ImageId = ami_id,
-	InstanceType = 't2.micro',
+	InstanceType = inst_type,
 	KeyName = 'ec2-keypair',
 	MinCount = ec2_min,
 	MaxCount = ec2_max,
