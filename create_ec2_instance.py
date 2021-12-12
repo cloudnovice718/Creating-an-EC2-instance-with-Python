@@ -1,7 +1,6 @@
 import os
 import subprocess
 import boto3
-# from botocore import ClientError
 
 # Setting global variables
 ec2_client = boto3.client('ec2')
@@ -10,67 +9,47 @@ ip_proto = 'tcp'
 ssh_port = 22
 http_port = 80
 https_port = 443
-sec_group_name = 'my_python_sec_group'
 vpc_cidr = '192.168.0.0/16'
 subnet_cidr = '192.168.1.0/24'
 ec2_min = 1
 ec2_max = 1
-ami_id = 'ami-0ed9277fb7eb570c9'
+ami_id = 'ami-083654bd07b5da81d'
 inst_type = 't2.micro'
+key_pair_name = 'ec2-keypair'
+
 
 # Create VPC
 def create_new_vpc():
+	print("Creating the VPC...")
 	vpc = ec2_client.create_vpc(CidrBlock = vpc_cidr)
 	vpc_id = vpc['Vpc']['VpcId']
 	ec2_client.modify_vpc_attribute(VpcId = vpc_id, EnableDnsSupport = {'Value': True})
 	ec2_client.modify_vpc_attribute(VpcId = vpc_id, EnableDnsHostnames = {'Value': True})
 
 	# Create an internet gateway and attach to the VPC
+	print("Creating an internet gateway for the VPC...")
 	igw = ec2_client.create_internet_gateway()
 	igw_id = igw['InternetGateway']['InternetGatewayId']
 	ec2_client.attach_internet_gateway(InternetGatewayId = igw_id, VpcId = vpc_id)
-	print(f"VPC: {vpc_id} and Internet Gateway: {igw_id} created successfully")
+	print(f"Internet Gateway: {igw_id} has been created")
 
 	# Create the subnet
+	print("Creating a subnet for the VPC...")
 	subnet = ec2_client.create_subnet(CidrBlock = subnet_cidr, VpcId = vpc_id)
 	subnet_id = subnet['Subnet']['SubnetId']
 	print(f"Subnet id: {subnet_id} has been created")
 
 	# Create a route on the VPC to the internet
-	route_table_info = ec2_client.describe_route_tables(
-
-	Filters = [{'Name': 'vpc-id', 'Values': [vpc_id]}]
-
-	)
+	print("Enabling internet access on the VPC...")
+	route_table_info = ec2_client.describe_route_tables(Filters = [{'Name': 'vpc-id', 'Values': [vpc_id]}])
 	route_table_id = route_table_info['RouteTables'][0]['RouteTableId']
+	ec2_client.create_route(DestinationCidrBlock = '0.0.0.0/0', GatewayId = igw_id,	RouteTableId = route_table_id)
 
-	ec2_client.create_route(
+	# Create inbound rules for the VPC's default security group
+	print("Setting inbound rules for the security group...")
+	sec_group_info = ec2_client.describe_security_groups(Filters = [{'Name': 'vpc-id', 'Values': [vpc_id]}])
+	sec_group_id = sec_group_info['SecurityGroups'][0]['GroupId']
 
-	DestinationCidrBlock = '0.0.0.0/0',
-	GatewayId = igw_id,
-	RouteTableId = route_table_id
-
-	)
-
-# Create security group
-def create_sec_group():
-	vpc_info = ec2_client.describe_vpcs(
-
-	Filters = [{'Name': 'cidr', 'Values': [vpc_cidr]}]
-
-	)
-	vpc_id = vpc_info['Vpcs'][0]['VpcId']
-
-	sec_group = ec2_client.create_security_group(
-
-	Description = 'Security group created using python script',
-	GroupName = sec_group_name,
-	VpcId = vpc_id
-
-	)
-	sec_group_id = sec_group['GroupId']
-
-	# Create inbound rules
 	ec2_client.authorize_security_group_ingress(
 
 	GroupId = sec_group_id,
@@ -98,26 +77,22 @@ def create_sec_group():
 		}
 	])		
 
+	print(f"VPC: {vpc_id} created successfully!")
+
 # Create EC2 instance
 def create_ec2_instance():
 	key_info = ec2_client.describe_key_pairs()
-	sec_group_info = ec2_client.describe_security_groups(
-
-	Filters = [{'Name': 'group-name', 'Values': [sec_group_name]}]
-
-	)
+	vpc_info = ec2_client.describe_vpcs(Filters = [{'Name': 'cidr', 'Values': [vpc_cidr]}])
+	vpc_id = vpc_info['Vpcs'][0]['VpcId']	
+	sec_group_info = ec2_client.describe_security_groups(Filters = [{'Name': 'vpc-id', 'Values': [vpc_id]}])
 	sec_group_id = sec_group_info['SecurityGroups'][0]['GroupId']	
-	subnet_info = ec2_client.describe_subnets(
-
-	Filters = [{'Name': 'cidr-block', 'Values': [subnet_cidr]}]
-
-	)
+	subnet_info = ec2_client.describe_subnets(Filters = [{'Name': 'cidr-block', 'Values': [subnet_cidr]}])
 	subnet_id = subnet_info['Subnets'][0]['SubnetId']
 
 	# Create key pair if not already present
 	if not key_info['KeyPairs']:
 		print("Creating key pair...")		
-		key_pair = ec2_client.create_key_pair(KeyName = 'ec2-keypair', KeyType = 'rsa')
+		key_pair = ec2_client.create_key_pair(KeyName = key_pair_name, KeyType = 'rsa')
 	elif not any(file.endswith('.pem') for file in os.listdir('.')):
 		key_file = open('ec2-keypair.pem','w')
 		key_contents = key_pair['KeyMaterial']
@@ -134,7 +109,7 @@ def create_ec2_instance():
 
 	ImageId = ami_id,
 	InstanceType = inst_type,
-	KeyName = 'ec2-keypair',
+	KeyName = key_pair_name,
 	MinCount = ec2_min,
 	MaxCount = ec2_max,
 	NetworkInterfaces = [{
@@ -151,5 +126,4 @@ def create_ec2_instance():
 	print("The EC2 instance has been created successfully!")
 
 create_new_vpc()
-create_sec_group()
 create_ec2_instance()
