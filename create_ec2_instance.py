@@ -125,5 +125,5 @@ def create_ec2_instance():
 	)
 	print("The EC2 instance has been created successfully!")
 
-create_new_vpc()
-create_ec2_instance()
+if __name__ == "__main__":
+	create_ec2_instance()
