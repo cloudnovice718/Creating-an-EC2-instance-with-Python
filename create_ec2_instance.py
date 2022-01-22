@@ -94,12 +94,14 @@ def create_ec2_instance():
 		print("Creating key pair...")		
 		key_pair = ec2_client.create_key_pair(KeyName = key_pair_name, KeyType = 'rsa')
 	elif not any(file.endswith('.pem') for file in os.listdir('.')):
-		key_file = open('ec2-keypair.pem','w')
+		key_file = key_pair_name + '.pem'
+		f = open(f"{key_file}",'w')
 		key_contents = key_pair['KeyMaterial']
 		print(key_contents)
-		key_file.write(key_contents)
-		subprocess.call(['chmod', '0400', 'ec2-keypair.pem'])
-		print("Key pair file successfully created!")
+		f.write(key_contents)
+		subprocess.call(['chmod', '0400', key_file])
+		f.close()
+		print(f"Key pair file: {key_file} successfully created!")
 	else:
 		print("A key pair already exists")
 
